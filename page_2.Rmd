@@ -1,0 +1,16 @@
+---
+title: "JSC370 Final Project: Page 2"
+author: "Karim Zakir"
+output: 
+    html_document:
+        toc: TRUE
+        toc_float: TRUE
+---
+
+This is the second page for JSC370 final project.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library("tidyverse")
+library("plotly")
+```
