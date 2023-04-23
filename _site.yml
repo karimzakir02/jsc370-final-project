@@ -14,4 +14,4 @@ navbar:
       href: https://www.linkedin.com/in/karim-zakir-172124171/
 output:
   html_document:
-    theme: spacelab
+    theme: lumen
