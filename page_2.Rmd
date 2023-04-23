@@ -1,16 +1,13 @@
 ---
-title: "JSC370 Final Project: Page 2"
-author: "Karim Zakir"
+title: "Methods and Results"
 output: 
     html_document:
         toc: TRUE
         toc_float: TRUE
 ---
 
-This is the second page for JSC370 final project.
+## Scraping the Data
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE)
-library("tidyverse")
-library("plotly")
-```
+## Looking Closely at the data
+
+## Results
