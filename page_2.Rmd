@@ -18,12 +18,7 @@ library("kableExtra")
 ```
 
 ```{r, include=FALSE}
-dat <- read_csv("data/data_v2.csv")
-dat$pub_month <- as.factor(month(dat$pub_date))
-dat$year <- as.factor(year(dat$pub_date))
-dat <- dat %>% 
-  filter(year != 2007)
-dat$title <- str_replace_all(dat$title, '’', "'")
+dat <- read_csv("data/processed_data.csv")
 sw_regex <- paste0(" ", paste0(stop_words$word ,collapse = " | ")) %>% paste0(" s")
 
 bing <- get_sentiments("bing")
@@ -31,32 +26,10 @@ bing <- get_sentiments("bing")
 
 ```{r}
 dem_articles <- dat %>% 
-  filter(year %in% c(2012, 2013, 2014, 2015))
+  filter(president == "dem")
 
 republican_articles <- dat %>% 
-  filter(year %in% c(2016, 2017, 2018, 2019))
-```
-
-
-```{r, results='asis', eval=FALSE}
-dat$no_sw_title <- str_replace_all(dat$title, sw_regex, " ")
-dat$headline_word_count <- lengths(strsplit(dat$title, ' '))
-dat$headline_no_sw_word_count <- lengths(strsplit(dat$no_sw_title, " "))
-
-dat$headline_char_count <- apply(dat[, 1, drop = FALSE], 2, nchar)
-dat$headline_no_sw_char_count <- apply(dat[, 10, drop = FALSE], 2, nchar)
-
-cols <- c("headline_word_count", "headline_no_sw_word_count", "headline_char_count", "headline_no_sw_char_count")
-stargazer(
-    as.data.frame(dat[, cols]), type = "html", 
-    summary.stat = c("min", "p25", "median", "p75", "max", "mean"),
-    header = FALSE, title = "NYT Headlines Summary Statistics",
-    column.labels = c("Variable", "Minimum", "1st Quartile", "Median", "3rd Quartile", "Maximum", "Mean"),
-    column.separate = c(1, 2, 3, 4, 5, 6, 7),
-    covariate.labels = c("Word Count", "Word Count (No Stop-Words)", "Char. Count",  "Char. Count (No Stop-Words)"),
-    column.sep.width = "10pt"
-)
-
+  filter(president == "rep")
 ```
 
 ## Showcasing plots {.tabset}
@@ -67,6 +40,7 @@ stargazer(
 top50_common_dem <- dem_articles[, 1, drop = FALSE] %>% 
   unnest_tokens(word, title) %>% 
   anti_join(stop_words, by = c("word" = "word")) %>% 
+  filter(word != "0091") %>% 
   count(word, sort = TRUE) %>% 
   top_n(50, n)
 wordcloud(top50_common_dem$word, top50_common_dem$n)
@@ -78,11 +52,11 @@ wordcloud(top50_common_dem$word, top50_common_dem$n)
 top50_common_rep <- republican_articles[, 1, drop = FALSE] %>% 
   unnest_tokens(word, title) %>% 
   anti_join(stop_words, by = c("word" = "word")) %>% 
+  filter(word != "0091") %>% 
   count(word, sort = TRUE) %>% 
   top_n(50, n)
 wordcloud(top50_common_rep$word, top50_common_rep$n)
 ```
-{-}
 
 ## Scraping the Data
 
