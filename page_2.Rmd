@@ -15,7 +15,9 @@ library("lubridate")
 library("stargazer")
 library("wordcloud")
 library("kableExtra")
+library("plotly")
 ```
+<br>
 
 ```{r, include=FALSE}
 dat <- read_csv("data/processed_data.csv")
@@ -32,11 +34,41 @@ republican_articles <- dat %>%
   filter(president == "rep")
 ```
 
-## Showcasing plots {.tabset}
+## Headline Word Count Distribution
 
-### 2012-2016 Word Cloud
+```{r, echo=FALSE}
+fig <- dem_articles %>% 
+  plot_ly(x = ~headline_word_count, type="histogram", visible=T, alpha=0.6, nbinsx=20, color = I("blue"))
+fig <- fig %>% add_histogram(x = ~republican_articles$headline_word_count, type = "histogram", visible = F, color = I("red"))
 
-```{r}
+fig <- fig %>% layout(
+  title = "Headline Word Count Distribution During Different Time Periods",
+  xaxis = list(title = "Headline Word Count"),
+  yaxis = list(title = "No. Articles"),
+  updatemenus = list(
+    list(
+    y = 0.9,
+    buttons = list(
+      list(method = "restyle",
+           args = list("visible", list(TRUE, FALSE)),
+           label = "2013-2016"),
+      list(method = "restyle",
+           args = list("visible", list(FALSE, TRUE)),
+           label = "2017-2020")
+    )
+  ))
+) %>% hide_legend()
+
+fig
+```
+
+The above plot show the word count in NYT headlines distributions during Obama's and Trump's presidencies. 
+
+## NYT Headlines Word Clouds {.tabset}
+
+### 2013-2016 Word Cloud
+
+```{r, echo=FALSE}
 top50_common_dem <- dem_articles[, 1, drop = FALSE] %>% 
   unnest_tokens(word, title) %>% 
   anti_join(stop_words, by = c("word" = "word")) %>% 
@@ -46,9 +78,9 @@ top50_common_dem <- dem_articles[, 1, drop = FALSE] %>%
 wordcloud(top50_common_dem$word, top50_common_dem$n)
 ```
 
-### 2016-2020 Word Cloud
+### 2017-2020 Word Cloud
 
-```{r}
+```{r, echo=FALSE}
 top50_common_rep <- republican_articles[, 1, drop = FALSE] %>% 
   unnest_tokens(word, title) %>% 
   anti_join(stop_words, by = c("word" = "word")) %>% 
@@ -58,8 +90,213 @@ top50_common_rep <- republican_articles[, 1, drop = FALSE] %>%
 wordcloud(top50_common_rep$word, top50_common_rep$n)
 ```
 
-## Scraping the Data
+## {-}
 
-## Looking Closely at the data
+The above word clouds show the 50 most frequently used words in NYT headlines during Obama's presidency (2013 - 2016) and during Trump's presidency (2017 - 2020). The size of the words in the word clouds reflects how often those words were used.
 
-## Results
+```{r}
+top5_sections <- dat %>% 
+  group_by(section_name) %>% 
+  summarize(n = n()) %>% 
+  arrange(-n) %>% 
+  top_n(5, n)
+
+top5_sections <- top5_sections$section_name
+
+word_counts <- dat[, c(1, 2), drop = FALSE] %>% 
+  filter(section_name %in% top5_sections) %>% 
+  unnest_tokens(token, title) %>% 
+  anti_join(stop_words, by = c("token" = "word")) %>% 
+  count(token, section_name, sort=TRUE) %>% 
+  filter(token != "0091")
+```
+
+## Most Common Headline Words in Top 5 NYT Categories {.tabset}
+
+### U.S. Section
+
+```{r}
+word_counts %>% 
+  dplyr::filter(section_name == top5_sections[1]) %>% 
+  top_n(10, n) %>% 
+  ggplot(mapping = aes(x = fct_reorder(token, n), y = n)) +
+  geom_col(fill = "orange") +
+  labs(x = "Word", y = "Number of Occurences in the Headlines") +
+  coord_flip()
+```
+
+### Opinion Section
+
+```{r}
+word_counts %>% 
+  dplyr::filter(section_name == top5_sections[2]) %>% 
+  top_n(10, n) %>% 
+  ggplot(mapping = aes(x = fct_reorder(token, n), y = n)) +
+  geom_col(fill = "orange") +
+  labs(x = "Word", y = "Number of Occurences in the Headlines") +
+  coord_flip()
+```
+
+
+### World Section
+
+```{r}
+word_counts %>% 
+  dplyr::filter(section_name == top5_sections[3]) %>% 
+  top_n(10, n) %>% 
+  ggplot(mapping = aes(x = fct_reorder(token, n), y = n)) +
+  geom_col(fill = "orange") +
+  labs(x = "Word", y = "Number of Occurences in the Headlines") +
+  coord_flip()
+```
+
+
+### Arts Section
+
+```{r}
+word_counts %>% 
+  dplyr::filter(section_name == top5_sections[4]) %>% 
+  top_n(10, n) %>% 
+  ggplot(mapping = aes(x = fct_reorder(token, n), y = n)) +
+  geom_col(fill = "orange") +
+  labs(x = "Word", y = "Number of Occurences in the Headlines") +
+  coord_flip()
+```
+
+### Business Day Section
+```{r}
+word_counts %>% 
+  dplyr::filter(section_name == top5_sections[5]) %>% 
+  top_n(10, n) %>% 
+  ggplot(mapping = aes(x = fct_reorder(token, n), y = n)) +
+  geom_col(fill = "orange") +
+  labs(x = "Word", y = "Number of Occurences in the Headlines") +
+  coord_flip()
+```
+
+## {-}
+
+The above plots show the frequency of the most commonly used words in NYT headlines for each of the 5 most common sections in the newspapers. These plots reflect only the headlines written between 2013 and 2020.
+
+## Emotional Word Usage {.tabset}
+
+### Obama's Presidency
+
+```{r}
+p <- dat %>% 
+  filter(section_name %in% top5_sections) %>%
+  filter(president == "dem") %>%
+  pivot_longer(cols = c(negative_prop, positive_prop)) %>% 
+  rename(Proportion = value) %>% 
+  mutate(name = ifelse(name == "negative_prop", "Negative", "Positive"),
+         Proportion = signif(Proportion, 3)) %>% 
+  ggplot(mapping = aes(x = name, y = Proportion, fill = name)) +
+  geom_bar(stat = "summary", fun = "mean") +
+  facet_wrap(~section_name) +
+  theme(legend.position = "none") +
+  labs(x = "Sentiment", y = "Average Proportion in Headline")
+
+ggplotly(p, tooltip = c("Proportion"))
+```
+
+### Trump's Presidency
+
+```{r}
+p <- dat %>% 
+  filter(section_name %in% top5_sections) %>%
+  filter(president == "rep") %>%
+  pivot_longer(cols = c(negative_prop, positive_prop)) %>% 
+  rename(Proportion = value) %>% 
+  mutate(name = ifelse(name == "negative_prop", "Negative", "Positive"),
+         Proportion = signif(Proportion, 3)) %>% 
+  ggplot(mapping = aes(x = name, y = Proportion, fill = name)) +
+  geom_bar(stat = "summary", fun = "mean") +
+  facet_wrap(~section_name) +
+  theme(legend.position = "none") +
+  labs(x = "Sentiment", y = "Average Proportion in Headline")
+
+ggplotly(p, tooltip = c("Proportion"))
+```
+
+## {-}
+
+The above two plots show the percentage that negative and positive words used up in headlines during Obama's and Trump's presidencies. These percentages are shown separately for each section.
+
+## Emotional Language Difference Confidence Intervals {.tabset}
+
+```{r}
+negative_conf_inters <- matrix(nrow = 0, ncol = 3, dimnames = list(c(), c("section", "lower", "upper")))
+positive_conf_inters <- matrix(nrow = 0, ncol = 3, dimnames = list(c(), c("section", "lower", "upper")))
+count <- 1
+
+for (section in top5_sections) {
+  current_section <- dat %>% 
+    filter(section_name == section)
+  
+  curr_neg_inters <- t.test(current_section %>% filter(president == "dem") %>% select(negative_prop), current_section %>% filter(president == "rep") %>% select(negative_prop))$conf.int
+  
+  negative_conf_inters <- rbind(negative_conf_inters, c(section, curr_neg_inters[1], curr_neg_inters[2]))
+
+  curr_positive_inters <- t.test(current_section %>% filter(president == "dem") %>% select(positive_prop), current_section %>% filter(president == "rep") %>% select(positive_prop))$conf.int
+  
+  positive_conf_inters <- rbind(positive_conf_inters, c(section, curr_positive_inters[1], curr_positive_inters[2]))
+}
+
+negative_conf_inters <- negative_conf_inters %>% 
+  as.data.frame()
+negative_conf_inters$lower <- as.double(negative_conf_inters$lower)
+negative_conf_inters$upper <- as.double(negative_conf_inters$upper)
+negative_conf_inters <- negative_conf_inters %>%
+  mutate(point_estimate = (lower + upper) / 2)
+
+positive_conf_inters <- positive_conf_inters %>% 
+  as.data.frame()
+positive_conf_inters$lower <- as.double(positive_conf_inters$lower)
+positive_conf_inters$upper <- as.double(positive_conf_inters$upper)
+positive_conf_inters <- positive_conf_inters %>%
+  mutate(point_estimate = (lower + upper) / 2)
+
+negative_conf_inters <- negative_conf_inters %>% 
+  mutate(sd = upper - point_estimate)
+
+positive_conf_inters <- positive_conf_inters %>% 
+  mutate(sd = upper - point_estimate)
+```
+
+### Negative Word Usage
+
+```{r}
+negative_conf_inters %>% 
+  plot_ly(x = ~point_estimate, y = ~section, type = "scatter", mode = "markers",
+          error_x = ~list(array = sd),
+          hoverinfo = "text",
+          text = ~paste(
+            "Section Name:", section, "\n",
+            "Point Estimate:", signif(point_estimate, 3), "\n",
+            "CI Lower Bound:", signif(lower, 3), "\n",
+            "CI Upper Bound:", signif(upper, 3), "\n"
+          )) %>% 
+  layout(xaxis = list(title = "Proportional Difference (Dem - Rep)"),
+         yaxis = list(title = "Section Name"))
+```
+
+### Positive Word Usage
+
+```{r}
+positive_conf_inters %>% 
+  plot_ly(x = ~point_estimate, y = ~section, type = "scatter", mode = "markers",
+          error_x = ~list(array = sd),
+          hoverinfo = "text",
+          text = ~paste(
+            "Section Name:", section, "\n",
+            "Point Estimate:", signif(point_estimate, 3), "\n",
+            "CI Lower Bound:", signif(lower, 3), "\n",
+            "CI Upper Bound:", signif(upper, 3), "\n"
+          )) %>% 
+  layout(xaxis = list(title = "Proportional Difference (Dem - Rep)"),
+         yaxis = list(title = "Section Name"))
+```
+
+## {-}
+
+The plots above show the confidence intervals for the difference in negative and positive word usages between Obama's presidency and Trump's presidency. 
