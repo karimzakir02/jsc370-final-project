@@ -1,5 +1,5 @@
 ---
-title: "Methods and Results"
+title: "Interactive Visualizations"
 output: 
     html_document:
         toc: TRUE
