@@ -62,7 +62,7 @@ fig <- fig %>% layout(
 fig
 ```
 
-The above plot show the word count in NYT headlines distributions during Obama's and Trump's presidencies. 
+The above plot show the distribution of the word counts of NYT headlines during Obama's and Trump's presidencies. 
 
 ## NYT Headlines Word Clouds {.tabset}
 
@@ -176,7 +176,7 @@ word_counts %>%
 
 ## {-}
 
-The above plots show the frequency of the most commonly used words in NYT headlines for each of the 5 most common sections in the newspapers. These plots reflect only the headlines written between 2013 and 2020.
+The above plots show the frequency of the most 10 commonly used words in NYT headlines for each of the 5 most common sections in the newspaper. These plots reflect only the headlines written between 2013 and 2020.
 
 ## Emotional Word Usage {.tabset}
 
@@ -220,7 +220,7 @@ ggplotly(p, tooltip = c("Proportion"))
 
 ## {-}
 
-The above two plots show the percentage that negative and positive words used up in headlines during Obama's and Trump's presidencies. These percentages are shown separately for each section.
+The above two plots show the percentage that negative and positive words used up in headlines during Obama's and Trump's presidencies on average. These percentages are shown separately for each section.
 
 ## Emotional Language Difference Confidence Intervals {.tabset}
 
@@ -299,4 +299,4 @@ positive_conf_inters %>%
 
 ## {-}
 
-The plots above show the confidence intervals for the difference in negative and positive word usages between Obama's presidency and Trump's presidency. 
+The plots above show the confidence intervals for the difference in average negative and positive word usages between Obama's presidency and Trump's presidency. 
